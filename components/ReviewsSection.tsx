@@ -37,7 +37,7 @@ export function ReviewsSection() {
   const go = (next: number) => setIndex((next + reviews.length) % reviews.length);
 
   return (
-    <section className="overflow-hidden py-24 md:py-36" aria-labelledby="reviews-title">
+    <section className="overflow-hidden py-24" aria-labelledby="reviews-title">
       <div className="mx-auto max-w-[1480px] px-5 md:px-10">
         <SectionHeading
           index="07"

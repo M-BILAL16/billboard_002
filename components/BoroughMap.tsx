@@ -26,7 +26,7 @@ export function BoroughMap() {
   };
 
   return (
-    <section className="px-5 py-24 md:px-10 md:py-36" aria-labelledby="boroughs-title">
+    <section className="px-5 py-24 md:px-10" aria-labelledby="boroughs-title">
       <div className="mx-auto max-w-[1400px]">
         <SectionHeading
           index="04"

@@ -14,7 +14,7 @@ export function PortfolioSection() {
   const select = (next: number) => setIndex((next + transformations.length) % transformations.length);
 
   return (
-    <section id="portfolio" className="px-5 py-24 md:px-10 md:py-36" aria-labelledby="portfolio-title">
+    <section id="portfolio" className="px-5 py-24 md:px-10" aria-labelledby="portfolio-title">
       <div className="mx-auto max-w-[1400px]">
         <SectionHeading
           index="03"

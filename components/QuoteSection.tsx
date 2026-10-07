@@ -19,7 +19,7 @@ export function QuoteSection() {
   const reduce = useReducedMotion();
 
   return (
-    <section id="contact" className="px-5 py-24 md:px-10 md:py-36" aria-labelledby="quote-title">
+    <section id="contact" className="px-5 py-24 md:px-10" aria-labelledby="quote-title">
       <div className="mx-auto max-w-[1400px]">
         <SectionHeading
           index="08"

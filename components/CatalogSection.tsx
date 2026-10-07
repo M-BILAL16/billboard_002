@@ -18,7 +18,7 @@ export function CatalogSection() {
     : category.items;
 
   return (
-    <section id="catalog" className="px-5 py-24 md:px-10 md:py-36" aria-labelledby="catalog-title">
+    <section id="catalog" className="px-5 py-24 md:px-10" aria-labelledby="catalog-title">
       <div className="mx-auto max-w-[1400px]">
         <SectionHeading
           index="05"

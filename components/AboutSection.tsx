@@ -58,7 +58,7 @@ export function AboutSection() {
   );
 
   return (
-    <section ref={root} id="about" className="px-5 pt-24 pb-24 md:px-10 md:pt-36 md:pb-32" aria-labelledby="about-title">
+    <section ref={root} id="about" className="px-5 py-24 md:px-10" aria-labelledby="about-title">
       <div className="mx-auto max-w-[1400px]">
         <div className="grid gap-10 lg:grid-cols-12">
           <div className="lg:col-span-3">

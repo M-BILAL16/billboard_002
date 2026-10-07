@@ -52,7 +52,7 @@ export function ProcessSection() {
   );
 
   return (
-    <section ref={root} id="services" className="px-5 py-24 md:px-10 md:py-36" aria-labelledby="process-title">
+    <section ref={root} id="services" className="px-5 py-24 md:px-10" aria-labelledby="process-title">
       <div className="mx-auto grid max-w-[1400px] gap-14 lg:grid-cols-12">
         <div className="lg:col-span-5">
           <div className="lg:sticky lg:top-32">

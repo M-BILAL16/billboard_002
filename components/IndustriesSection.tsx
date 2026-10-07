@@ -20,7 +20,7 @@ export function IndustriesSection() {
   };
 
   return (
-    <section id="industries" className="py-24 md:py-36" aria-labelledby="industries-title">
+    <section id="industries" className="py-24" aria-labelledby="industries-title">
       <div className="mx-auto max-w-[1480px] px-5 md:px-10">
         <SectionHeading
           index="06"

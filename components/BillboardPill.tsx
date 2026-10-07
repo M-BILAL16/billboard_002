@@ -67,7 +67,7 @@ export function BillboardPill({ item, active, onSelect }: Props) {
       whileTap={interactive ? { scale: 0.985 } : undefined}
       transition={{ type: "spring", stiffness: 460, damping: 28, mass: 0.6 }}
     >
-      <span className="relative h-8 w-12 shrink-0 overflow-hidden rounded-full bg-navy md:h-10 md:w-16">
+      <span className="relative h-8 w-12 shrink-0 overflow-hidden rounded-full bg-navy md:h-[100px] md:w-[100px]">
         {item.preview ? (
           <video
             data-src={item.preview}
@@ -84,7 +84,7 @@ export function BillboardPill({ item, active, onSelect }: Props) {
             src={item.image}
             alt=""
             fill
-            sizes="64px"
+            sizes="100px"
             className="object-cover transition-transform duration-500 group-hover:scale-110"
           />
         )}
@@ -93,7 +93,7 @@ export function BillboardPill({ item, active, onSelect }: Props) {
           className="absolute inset-0 grid place-items-center bg-[#071525]/35 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100"
           aria-hidden="true"
         >
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="white">
+          <svg className="h-2.5 w-2.5 md:h-5 md:w-5" viewBox="0 0 10 10" fill="white">
             <path d="M2.5 1.6v6.8L8.4 5z" />
           </svg>
         </span>

@@ -1,4 +1,4 @@
-import { heroItems } from "@/data/billboardItems";
+import { heroHeadline, heroItems, heroOpeningId } from "@/data/billboardItems";
 import { BillboardScene } from "./BillboardScene";
 
 export function InteractiveHero() {
@@ -7,11 +7,13 @@ export function InteractiveHero() {
       sceneId="hero"
       anchorId="top"
       items={heroItems}
+      openingId={heroOpeningId}
+      headline={heroHeadline}
       priority
       eyebrow="Out-of-home, reimagined"
       title="Make your message"
       emphasis="impossible to miss."
-      scrollFactor={2.55}
+      scrollFactor={1.35}
     />
   );
 }

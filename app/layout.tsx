@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Vantage — Digital billboards for the physical world",
+  title: "Signs NYC | Custom Signs, Storefronts & Architectural Fabrication New York",
   description:
-    "Vantage plans, launches, and measures digital billboard campaigns in the places people actually move through.",
+    "From illuminated storefront channel letters and architectural metalwork to corporate lobby branding and fleet graphics. Serving all 5 NYC boroughs since 1989.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

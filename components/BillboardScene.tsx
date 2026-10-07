@@ -13,13 +13,20 @@ type Runtime = {
   focusProgress: number;
   shown: 0 | 1;
   introDone: boolean;
+  introPlaying: boolean;
   booted: boolean;
+  previews: boolean;
+  dock: { x: number; y: number; width: number } | null;
 };
 
 type Props = {
   sceneId: string;
   anchorId?: string;
   items: BillboardItem[];
+  /** Item the film opens on. Defaults to the first item. */
+  openingId?: string;
+  /** Centerpiece lines shown among the pills. `[film]` marks where the shrunken film docks. */
+  headline?: string[];
   priority?: boolean;
   eyebrow?: string;
   title?: string;
@@ -28,6 +35,8 @@ type Props = {
   scrollFactor?: number;
 };
 
+const FILM_TOKEN = "[film]";
+
 const clamp01 = gsap.utils.clamp(0, 1);
 const drift = gsap.parseEase("power2.inOut");
 
@@ -35,11 +44,13 @@ export function BillboardScene({
   sceneId,
   anchorId,
   items,
+  openingId,
+  headline,
   priority = false,
   eyebrow,
   title,
   emphasis,
-  scrollFactor = 2.45,
+  scrollFactor = 1.35,
 }: Props) {
   const rootRef = useRef<HTMLDivElement>(null);
   const pinRef = useRef<HTMLDivElement>(null);
@@ -52,20 +63,26 @@ export function BillboardScene({
   const glowRef = useRef<HTMLDivElement>(null);
   const hintRef = useRef<HTMLParagraphElement>(null);
   const pillsLayerRef = useRef<HTMLDivElement>(null);
+  const headlineRef = useRef<HTMLDivElement>(null);
+  const slotRef = useRef<HTMLSpanElement>(null);
   const pillMap = useRef(new Map<string, HTMLDivElement>());
   const runtime = useRef<Runtime>({
     mode: "scroll",
     focusProgress: 0,
     shown: 0,
     introDone: false,
+    introPlaying: false,
     booted: false,
+    previews: false,
+    dock: null,
   });
   const selectRef = useRef<(item: BillboardItem) => void>(() => {});
   const nudgeRef = useRef<(el: HTMLElement, active: boolean) => void>(() => {});
 
-  const [activeId, setActiveId] = useState(items[0]?.id ?? "");
+  const opening = items.find((item) => item.id === openingId) ?? items[0];
+  const [activeId, setActiveId] = useState(opening?.id ?? "");
   const [engaged, setEngaged] = useState(false);
-  const active = items.find((item) => item.id === activeId) ?? items[0];
+  const active = items.find((item) => item.id === activeId) ?? opening;
 
   useGSAP(
     () => {
@@ -73,11 +90,14 @@ export function BillboardScene({
       const stage = stageRef.current;
       const pin = pinRef.current;
       const root = rootRef.current;
-      const opening = items[0];
       if (!frame || !stage || !pin || !root || !opening || !active) return;
 
       const triggerId = `billboard-${sceneId}`;
       const mm = gsap.matchMedia();
+      // React remounts this effect in development. Replay the entrance on that second pass.
+      runtime.current.booted = false;
+      runtime.current.introDone = false;
+      runtime.current.introPlaying = false;
 
       const pills = () => Array.from(pillMap.current.values());
 
@@ -85,8 +105,26 @@ export function BillboardScene({
         if (video) video.muted = true;
       };
 
+      const measureDock = () => {
+        const slot = slotRef.current;
+        if (!slot) {
+          runtime.current.dock = null;
+          return;
+        }
+        const slotBox = slot.getBoundingClientRect();
+        const pinBox = pin.getBoundingClientRect();
+        const lift = headlineRef.current ? Number(gsap.getProperty(headlineRef.current, "y")) || 0 : 0;
+        runtime.current.dock = {
+          x: slotBox.left + slotBox.width / 2 - pinBox.left - stage.offsetLeft,
+          y: slotBox.top + slotBox.height / 2 - lift - pinBox.top - stage.offsetTop,
+          width: slotBox.width,
+        };
+      };
+
       const finalScale = () => {
         const base = frame.offsetWidth || 1;
+        const dock = runtime.current.dock;
+        if (dock) return dock.width / base;
         const mobile = window.innerWidth < 768;
         const tile = mobile
           ? Math.min(96, window.innerWidth * 0.26)
@@ -96,17 +134,43 @@ export function BillboardScene({
 
       const visual = (progress: number) => {
         const endScale = finalScale();
-        const shrinkT = clamp01((progress - 0.08) / 0.5);
+        // The docked pose lands near the end of the pin, so the page
+        // releases as the last pills settle instead of sitting still.
+        const shrinkT = clamp01((progress - 0.02) / 0.76);
         const eased = drift(shrinkT);
         const scale = gsap.utils.interpolate(1, endScale, eased);
-        const endRadius = Math.min(420, 22 / Math.max(endScale, 0.04));
+        const endRadius = Math.min(420, 16 / Math.max(endScale, 0.04));
         const radius = gsap.utils.interpolate(28, endRadius, eased);
-        const appear = clamp01((progress - 0.52) / 0.16);
+        const appear = clamp01((progress - 0.7) / 0.28);
+        const words = clamp01((progress - 0.48) / 0.28);
         const copyAlpha = clamp01(1 - progress / 0.18);
         const hintAlpha = clamp01(1 - progress / 0.14);
+        const dock = runtime.current.dock;
         const mobile = window.innerWidth < 768;
-        const y = mobile ? gsap.utils.interpolate(0, -window.innerHeight * 0.18, eased) : 0;
-        return { scale, radius, appear, copyAlpha, hintAlpha, y };
+        const endY = dock ? dock.y : mobile ? -window.innerHeight * 0.18 : 0;
+        const x = dock ? gsap.utils.interpolate(0, dock.x, eased) : 0;
+        const y = gsap.utils.interpolate(0, endY, eased);
+        return { scale, radius, appear, words, copyAlpha, hintAlpha, x, y };
+      };
+
+      const setPreviews = (on: boolean) => {
+        if (runtime.current.previews === on) return;
+        runtime.current.previews = on;
+        pills().forEach((node) => {
+          const video = node.querySelector<HTMLVideoElement>("video[data-src]");
+          if (!video) return;
+          if (!on) {
+            video.pause();
+            return;
+          }
+          if (!video.getAttribute("src") && video.dataset.src) video.src = video.dataset.src;
+          video.muted = true;
+          video.play().catch(() => undefined);
+        });
+      };
+
+      const paintHeadline = (alpha: number) => {
+        if (headlineRef.current) gsap.set(headlineRef.current, { autoAlpha: alpha, y: 0 });
       };
 
       const paintPills = (appear: number, resetShift: boolean) => {
@@ -115,12 +179,14 @@ export function BillboardScene({
           if (resetShift) gsap.set(node, { autoAlpha: local, x: 0, y: 0 });
           else gsap.set(node, { autoAlpha: local });
         });
+        setPreviews(appear > 0.2);
       };
 
       const applyScroll = (progress: number) => {
         const state = visual(progress);
         gsap.set(frame, { scale: state.scale, borderRadius: state.radius, autoAlpha: 1 });
-        gsap.set(stage, { y: state.y });
+        gsap.set(stage, { x: state.x, y: state.y });
+        paintHeadline(state.words);
         if (copyRef.current) gsap.set(copyRef.current, { autoAlpha: state.copyAlpha });
         if (hintRef.current) gsap.set(hintRef.current, { autoAlpha: state.hintAlpha });
         if (glowRef.current) gsap.set(glowRef.current, { autoAlpha: gsap.utils.interpolate(1, 0.4, drift(clamp01((progress - 0.08) / 0.5))) });
@@ -184,51 +250,143 @@ export function BillboardScene({
           });
         });
         if (dockRef.current) gsap.set(dockRef.current, { autoAlpha: 0, y: 12 });
+        paintHeadline(0);
+        gsap.set(stage, { x: 0, y: 0 });
+        measureDock();
 
-        let intro: gsap.core.Tween | null = null;
+        let intro: gsap.core.Animation | null = null;
         let copyIntro: gsap.core.Tween | null = null;
         let hintIntro: gsap.core.Tween | null = null;
         if (!runtime.current.booted) {
           runtime.current.booted = true;
-          intro = gsap.fromTo(
-            frame,
-            { scale: 0.965, autoAlpha: 0 },
-            { scale: 1, autoAlpha: 1, duration: 1.15, ease: "power3.out", delay: priority ? 0.12 : 0 },
-          );
-          if (copyRef.current && title) {
-            copyIntro = gsap.fromTo(
-              copyRef.current,
-              { autoAlpha: 0, y: 16 },
-              { autoAlpha: 1, y: 0, duration: 0.9, delay: 0.32, ease: "power2.out" },
+          if (priority) {
+            const posed = visual(1);
+            gsap.set(frame, { scale: posed.scale, borderRadius: posed.radius, autoAlpha: 1 });
+            gsap.set(stage, { x: posed.x, y: posed.y });
+            if (copyRef.current) gsap.set(copyRef.current, { autoAlpha: 0, y: 18 });
+            if (hintRef.current) gsap.set(hintRef.current, { autoAlpha: 0 });
+            if (glowRef.current) gsap.set(glowRef.current, { autoAlpha: 0.35 });
+            pills().forEach((node) => gsap.set(node, { autoAlpha: 0, x: 0, y: 0 }));
+            runtime.current.introPlaying = true;
+            setPreviews(true);
+
+            const popAt = headline ? 1.9 : 1.2;
+            const distance = mobile ? 36 : 84;
+            const timeline = gsap.timeline({
+              onComplete: () => {
+                runtime.current.introPlaying = false;
+                runtime.current.introDone = true;
+                setPreviews(false);
+              },
+            });
+
+            if (headlineRef.current) {
+              timeline.fromTo(
+                headlineRef.current,
+                { autoAlpha: 0, y: 14 },
+                { autoAlpha: 1, y: 0, duration: 0.7, ease: "power2.out" },
+                0,
+              );
+              timeline.to(headlineRef.current, { autoAlpha: 0, duration: 0.4, ease: "power2.in" }, popAt);
+              timeline.set(headlineRef.current, { y: 0 }, popAt + 0.4);
+            }
+
+            pills().forEach((node, index) => {
+              timeline.to(
+                node,
+                { autoAlpha: 1, duration: 0.48, ease: "power2.out" },
+                0.06 + index * 0.055,
+              );
+            });
+
+            pills().forEach((node) => {
+              const rect = node.getBoundingClientRect();
+              const dx = rect.left + rect.width / 2 - window.innerWidth / 2;
+              const dy = rect.top + rect.height / 2 - window.innerHeight / 2;
+              const length = Math.hypot(dx, dy) || 1;
+              timeline.to(
+                node,
+                {
+                  x: (dx / length) * distance,
+                  y: (dy / length) * distance * 0.55,
+                  autoAlpha: 0,
+                  duration: 0.72,
+                  ease: "power3.inOut",
+                },
+                popAt,
+              );
+            });
+
+            timeline.to(frame, { scale: 1, borderRadius: 28, duration: 1.08, ease: "power3.inOut" }, popAt);
+            timeline.to(stage, { x: 0, y: 0, duration: 1.08, ease: "power3.inOut" }, popAt);
+            if (glowRef.current) {
+              timeline.to(glowRef.current, { autoAlpha: 1, duration: 0.8, ease: "power2.out" }, popAt);
+            }
+            if (copyRef.current && title) {
+              timeline.to(
+                copyRef.current,
+                { autoAlpha: 1, y: 0, duration: 0.7, ease: "power2.out" },
+                popAt + 0.4,
+              );
+            }
+            if (hintRef.current) {
+              timeline.to(hintRef.current, { autoAlpha: 1, duration: 0.45, ease: "power2.out" }, popAt + 0.75);
+            }
+            intro = timeline;
+          } else {
+            intro = gsap.fromTo(
+              frame,
+              { scale: 0.965, autoAlpha: 0 },
+              { scale: 1, autoAlpha: 1, duration: 1.15, ease: "power3.out" },
             );
-          }
-          if (hintRef.current) {
-            hintIntro = gsap.to(hintRef.current, { autoAlpha: 1, duration: 0.6, delay: 0.7, ease: "power2.out" });
+            if (copyRef.current && title) {
+              copyIntro = gsap.fromTo(
+                copyRef.current,
+                { autoAlpha: 0, y: 16 },
+                { autoAlpha: 1, y: 0, duration: 0.9, delay: 0.32, ease: "power2.out" },
+              );
+            }
+            if (hintRef.current) {
+              hintIntro = gsap.to(hintRef.current, { autoAlpha: 1, duration: 0.6, delay: 0.7, ease: "power2.out" });
+            }
           }
         } else {
           runtime.current.introDone = true;
           gsap.set(frame, { autoAlpha: 1, scale: 1, borderRadius: 28 });
         }
 
+        const remeasure = (progress: number) => {
+          measureDock();
+          if (runtime.current.introDone && runtime.current.mode === "scroll") applyScroll(progress);
+        };
+        document.fonts?.ready.then(() => ScrollTrigger.refresh()).catch(() => undefined);
+
         const st = ScrollTrigger.create({
           id: triggerId,
           trigger: pin,
           start: "top top",
-          end: () => `+=${Math.round(window.innerHeight * (mobile ? 1.8 : scrollFactor))}`,
+          end: () => `+=${Math.round(window.innerHeight * (mobile ? 1.15 : scrollFactor))}`,
           pin: true,
           anticipatePin: 1,
           invalidateOnRefresh: true,
           refreshPriority: priority ? 2 : 1,
+          onRefresh: (self) => remeasure(self.progress),
           onLeave: () => {
             const mode = runtime.current.mode;
             if (mode === "focus" || mode === "expanding" || mode === "collapsing") {
               runtime.current.mode = "scroll";
+              const end = visual(1);
               gsap.to(frame, {
-                scale: finalScale(),
+                scale: end.scale,
+                borderRadius: end.radius,
                 duration: 0.55,
                 ease: "power3.inOut",
                 overwrite: "auto",
               });
+              gsap.to(stage, { x: end.x, y: end.y, zIndex: 20, duration: 0.55, ease: "power3.inOut", overwrite: "auto" });
+              if (dockRef.current) gsap.to(dockRef.current, { autoAlpha: 0, duration: 0.3, overwrite: "auto" });
+              paintPills(end.appear, true);
+              paintHeadline(end.words);
             }
           },
           onUpdate: (self) => {
@@ -239,6 +397,7 @@ export function BillboardScene({
               copyIntro?.kill();
               hintIntro?.kill();
               gsap.set(frame, { autoAlpha: 1 });
+              rt.introPlaying = false;
               rt.introDone = true;
             }
 
@@ -251,10 +410,12 @@ export function BillboardScene({
               if (t <= 0) {
                 rt.mode = "focus";
                 gsap.set(frame, { scale: 1, borderRadius: 28 });
-                gsap.set(stage, { y: 0, zIndex: 40 });
+                gsap.set(stage, { x: 0, y: 0, zIndex: 40 });
                 if (dockRef.current) gsap.set(dockRef.current, { autoAlpha: 1 });
                 if (copyRef.current) gsap.set(copyRef.current, { autoAlpha: 0 });
                 pills().forEach((node) => gsap.set(node, { autoAlpha: 0 }));
+                paintHeadline(0);
+                setPreviews(false);
                 return;
               }
 
@@ -265,9 +426,13 @@ export function BillboardScene({
                 scale: gsap.utils.interpolate(1, state.scale, eased),
                 borderRadius: gsap.utils.interpolate(28, state.radius, eased),
               });
-              gsap.set(stage, { y: gsap.utils.interpolate(0, state.y, eased) });
+              gsap.set(stage, {
+                x: gsap.utils.interpolate(0, state.x, eased),
+                y: gsap.utils.interpolate(0, state.y, eased),
+              });
               if (dockRef.current) gsap.set(dockRef.current, { autoAlpha: 1 - eased });
               paintPills(state.appear * eased, true);
+              paintHeadline(state.words * eased);
               if (t < 1) return;
               rt.mode = "scroll";
               gsap.set(stage, { zIndex: 20 });
@@ -282,7 +447,13 @@ export function BillboardScene({
         selectRef.current = (item) => {
           const progress = st.progress;
           const open = runtime.current.mode === "focus" || runtime.current.mode === "expanding";
-          if (!open && progress < 0.5) return;
+          if (!open && progress < 0.68) {
+            if (!runtime.current.introPlaying) return;
+            intro?.kill();
+            runtime.current.introPlaying = false;
+            runtime.current.introDone = true;
+            gsap.set(pills(), { x: 0, y: 0 });
+          }
 
           setActiveId(item.id);
           setEngaged(true);
@@ -333,7 +504,9 @@ export function BillboardScene({
           }
 
           timeline.to(frame, { scale: 1, borderRadius: 28, duration: 0.98, ease: "power3.inOut" }, 0.05);
-          timeline.to(stage, { y: 0, duration: 0.98, ease: "power3.inOut" }, 0.05);
+          timeline.to(stage, { x: 0, y: 0, duration: 0.98, ease: "power3.inOut" }, 0.05);
+          if (headlineRef.current) timeline.to(headlineRef.current, { autoAlpha: 0, duration: 0.35 }, 0);
+          timeline.call(() => setPreviews(false), undefined, 0.7);
           if (copyRef.current) timeline.to(copyRef.current, { autoAlpha: 0, duration: 0.3 }, 0);
           if (hintRef.current) timeline.to(hintRef.current, { autoAlpha: 0, duration: 0.25 }, 0);
           if (dockRef.current) {
@@ -392,6 +565,7 @@ export function BillboardScene({
         const visibility = new IntersectionObserver(
           (entries) => {
             const seen = entries.some((entry) => entry.isIntersecting);
+            if (!seen) setPreviews(false);
             [videoARef.current, videoBRef.current].forEach((video) => {
               if (!video?.getAttribute("src")) return;
               const opacity = Number(gsap.getProperty(video, "opacity"));
@@ -417,6 +591,7 @@ export function BillboardScene({
         if (copyRef.current) gsap.set(copyRef.current, { autoAlpha: 1, y: 0 });
         if (dockRef.current) gsap.set(dockRef.current, { autoAlpha: 1, y: 0 });
         if (hintRef.current) gsap.set(hintRef.current, { autoAlpha: 0 });
+        paintHeadline(1);
         if (videoARef.current && !videoARef.current.getAttribute("src")) {
           videoARef.current.src = opening.video;
           videoARef.current.dataset.item = opening.id;
@@ -448,7 +623,10 @@ export function BillboardScene({
       aria-label={title ? "Opening film" : "Campaign films"}
       className="relative"
     >
-      <div ref={pinRef} className="scene-pin relative h-[100svh] overflow-hidden">
+      <div
+        ref={pinRef}
+        className={`scene-pin relative h-[100svh] overflow-hidden${headline ? " has-headline" : ""}`}
+      >
         <div className="scene-grid pointer-events-none absolute inset-0" aria-hidden="true" />
         <div
           ref={glowRef}
@@ -457,6 +635,7 @@ export function BillboardScene({
         />
         <VideoStage
           items={items}
+          opening={opening}
           active={active}
           priority={priority}
           eyebrow={eyebrow}
@@ -470,6 +649,26 @@ export function BillboardScene({
           dockRef={dockRef}
           onSelect={(item) => selectRef.current(item)}
         />
+        {headline ? (
+          <div ref={headlineRef} className="scene-headline pointer-events-none absolute inset-0 z-10">
+            <h2 className="scene-headline-text">
+              {headline.map((line) => {
+                const [before, after] = line.split(FILM_TOKEN);
+                return (
+                  <span key={line} className="block">
+                    {before}
+                    {after !== undefined ? (
+                      <>
+                        <span ref={slotRef} className="scene-slot" aria-hidden="true" />
+                        {after}
+                      </>
+                    ) : null}
+                  </span>
+                );
+              })}
+            </h2>
+          </div>
+        ) : null}
         <ScatteredPills
           items={items}
           activeId={activeId}

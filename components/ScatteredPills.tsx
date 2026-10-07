@@ -27,7 +27,7 @@ export function ScatteredPills({
       ref={layerRef}
       className="pills-layer pointer-events-none absolute inset-0"
       role="group"
-      aria-label="Billboard stories"
+      aria-label="Choose a film"
     >
       {items.map((item) => (
         <div

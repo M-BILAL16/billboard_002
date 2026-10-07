@@ -4,6 +4,7 @@ import type { BillboardItem } from "@/data/billboardItems";
 
 type Props = {
   items: BillboardItem[];
+  opening: BillboardItem;
   active: BillboardItem;
   priority: boolean;
   eyebrow?: string;
@@ -20,6 +21,7 @@ type Props = {
 
 export function VideoStage({
   items,
+  opening,
   active,
   priority,
   eyebrow,
@@ -33,8 +35,6 @@ export function VideoStage({
   dockRef,
   onSelect,
 }: Props) {
-  const opening = items[0];
-
   return (
     <div ref={stageRef} className="video-stage">
       <div ref={frameRef} className="video-frame">
@@ -72,17 +72,20 @@ export function VideoStage({
         ) : (
           <div ref={copyRef} className="scene-copy" />
         )}
-        <div ref={dockRef} className="video-dock absolute inset-x-0 bottom-0 z-10 p-3 sm:p-5">
-          <div className="rounded-2xl border border-white/15 bg-[#071525]/75 p-4 text-white shadow-[0_20px_60px_-30px_rgba(0,0,0,0.8)] backdrop-blur-xl sm:p-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div ref={dockRef} className="video-dock absolute inset-x-0 bottom-0 z-10 p-2 sm:p-5">
+          <div className="rounded-xl border border-white/15 bg-[#071525]/75 px-3 py-2.5 text-white shadow-[0_20px_60px_-30px_rgba(0,0,0,0.8)] backdrop-blur-xl sm:rounded-2xl sm:p-5">
+            <div className="flex flex-col gap-2 sm:gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-xl" aria-live="polite">
-                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#c5d8ff]">
+                <p className="hidden font-mono text-[10px] uppercase tracking-[0.18em] text-[#c5d8ff] sm:block">
                   {active.number} · {active.category}
                 </p>
-                <p className="mt-1 text-lg font-medium tracking-[-0.03em] sm:text-2xl">{active.title}</p>
-                <p className="mt-1 max-w-md text-sm leading-relaxed text-white/75">{active.description}</p>
+                <p className="text-sm font-medium tracking-[-0.02em] sm:mt-1 sm:text-2xl sm:tracking-[-0.03em]">
+                  <span className="mr-2 font-mono text-[10px] tracking-[0.12em] text-[#c5d8ff] sm:hidden">{active.number}</span>
+                  {active.title}
+                </p>
+                <p className="mt-1 hidden max-w-md text-sm leading-relaxed text-white/75 sm:block">{active.description}</p>
               </div>
-              <div className="flex gap-2 overflow-x-auto pb-0.5" role="group" aria-label="Switch story">
+              <div className="flex gap-1.5 overflow-x-auto pb-0.5 sm:gap-2" role="group" aria-label="Switch story">
                 {items.map((item) => {
                   const selected = item.id === active.id;
                   return (
@@ -92,7 +95,7 @@ export function VideoStage({
                       onClick={() => onSelect(item)}
                       aria-pressed={selected}
                       aria-label={`Switch to ${item.title}`}
-                      className={`shrink-0 rounded-full border px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] transition ${
+                      className={`shrink-0 rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.14em] transition sm:px-3 sm:py-1.5 ${
                         selected
                           ? "border-white bg-white text-navy"
                           : "border-white/25 bg-white/10 text-white hover:bg-white/20"
@@ -104,7 +107,9 @@ export function VideoStage({
                 })}
               </div>
             </div>
-            <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.16em] text-white/45">Scroll to continue</p>
+            <p className="mt-3 hidden font-mono text-[10px] uppercase tracking-[0.16em] text-white/45 sm:block">
+              Scroll to continue
+            </p>
           </div>
         </div>
       </div>

@@ -8,146 +8,54 @@ export type BillboardItem = {
   number: string;
   /** Swap the film by replacing this path. Only the active story is loaded. */
   video: string;
+  /** Short muted loop shown inside the pill. Optional; the thumbnail is used without it. */
+  preview?: string;
   poster: string;
   image: string;
   accent: PillAccent;
-  /** Desktop anchor, as a percentage of the scene. The tile stays at center. */
+  /** Desktop anchor, as a percentage of the scene. */
   x: number;
   y: number;
 };
 
+const sign = (
+  id: string,
+  number: string,
+  title: string,
+  description: string,
+  category: string,
+  accent: PillAccent,
+  x: number,
+  y: number,
+): BillboardItem => ({
+  id,
+  number,
+  title,
+  description,
+  category,
+  accent,
+  x,
+  y,
+  video: `/videos/signs/${id}.mp4`,
+  preview: `/videos/signs/previews/${id}.mp4`,
+  poster: `/posters/signs/${id}.jpg`,
+  image: `/thumbs/signs/${id}.jpg`,
+});
+
 export const heroItems: BillboardItem[] = [
-  {
-    id: "reach",
-    title: "Reach more people",
-    description: "A single placement can meet a city between home and the day ahead.",
-    category: "Reach",
-    number: "01",
-    video: "/videos/reach.mp4",
-    poster: "/posters/reach.jpg",
-    image: "/thumbs/reach.jpg",
-    accent: "white",
-    x: 50,
-    y: 15,
-  },
-  {
-    id: "action",
-    title: "Turn attention into action",
-    description: "The right screen, at the right corner, when the city is actually looking.",
-    category: "Attention",
-    number: "02",
-    video: "/videos/action.mp4",
-    poster: "/posters/action.jpg",
-    image: "/thumbs/action.jpg",
-    accent: "ice",
-    x: 18,
-    y: 28,
-  },
-  {
-    id: "impact",
-    title: "High-impact outdoor advertising",
-    description: "Formats large enough to feel inevitable. Never noisy.",
-    category: "Impact",
-    number: "03",
-    video: "/videos/impact.mp4",
-    poster: "/posters/impact.jpg",
-    image: "/thumbs/impact.jpg",
-    accent: "blue",
-    x: 82,
-    y: 24,
-  },
-  {
-    id: "audience",
-    title: "Reach the right audience",
-    description: "Context, time of day, and neighborhood — planned, not guessed.",
-    category: "Audience",
-    number: "04",
-    video: "/videos/audience.mp4",
-    poster: "/posters/audience.jpg",
-    image: "/thumbs/audience.jpg",
-    accent: "white",
-    x: 14,
-    y: 54,
-  },
-  {
-    id: "visibility",
-    title: "Build brand visibility",
-    description: "Show up until the skyline feels familiar with your name.",
-    category: "Visibility",
-    number: "05",
-    video: "/videos/visibility.mp4",
-    poster: "/posters/visibility.jpg",
-    image: "/thumbs/visibility.jpg",
-    accent: "sky",
-    x: 86,
-    y: 52,
-  },
-  {
-    id: "measure",
-    title: "Measure campaign performance",
-    description: "Proof of play, audience flow, and the lift that followed.",
-    category: "Measurement",
-    number: "06",
-    video: "/videos/measure.mp4",
-    poster: "/posters/measure.jpg",
-    image: "/thumbs/measure.jpg",
-    accent: "navy",
-    x: 34,
-    y: 78,
-  },
+  sign("indoor", "01", "Indoor Signs", "Lobbies and offices, finished to the inch.", "Interior", "white", 17, 23),
+  sign("outdoor", "02", "Outdoor Signs", "Built to outlast every New York season.", "Exterior", "ice", 50, 13),
+  sign("building", "03", "Building Signs", "Facade letters that become an address.", "Facade", "blue", 83, 23),
+  sign("construction", "04", "Construction Signs", "Hoardings that sell the building early.", "Site", "sky", 14, 49),
+  sign("event", "05", "Event Signs", "Launches and pop-ups, installed overnight.", "Events", "white", 86, 49),
+  sign("large-format", "06", "Large Format Printing", "Billboard scale, gallery-grade color.", "Print", "navy", 18, 75),
+  sign("rigid", "07", "Rigid Signs", "Aluminum, acrylic and PVC that lasts.", "Panels", "ice", 82, 75),
+  sign("vehicle", "08", "Vehicle Wraps", "Fleets that carry your name uptown.", "Fleet", "sky", 34, 89),
+  sign("vinyl", "09", "Vinyl Graphics", "Glass, walls and floors turned to media.", "Vinyl", "white", 66, 89),
 ];
 
-export const campaignItems: BillboardItem[] = [
-  {
-    id: "commute",
-    title: "Own the commute",
-    description: "Be the still point in a moving city.",
-    category: "Routes",
-    number: "01",
-    video: "/videos/commute.mp4",
-    poster: "/posters/commute.jpg",
-    image: "/thumbs/commute.jpg",
-    accent: "white",
-    x: 22,
-    y: 22,
-  },
-  {
-    id: "night",
-    title: "Light up the skyline",
-    description: "Night is just another prime-time window.",
-    category: "Night",
-    number: "02",
-    video: "/videos/night.mp4",
-    poster: "/posters/night.jpg",
-    image: "/thumbs/night.jpg",
-    accent: "ice",
-    x: 76,
-    y: 20,
-  },
-  {
-    id: "motion",
-    title: "Meet them on the move",
-    description: "Highways, arteries, and the long way home.",
-    category: "Motion",
-    number: "03",
-    video: "/videos/motion.mp4",
-    poster: "/posters/motion.jpg",
-    image: "/thumbs/motion.jpg",
-    accent: "sky",
-    x: 18,
-    y: 72,
-  },
-  {
-    id: "canvas",
-    title: "Make the city your medium",
-    description: "One idea, scaled to the size of a place.",
-    category: "Place",
-    number: "04",
-    video: "/videos/canvas.mp4",
-    poster: "/posters/canvas.jpg",
-    image: "/thumbs/canvas.jpg",
-    accent: "blue",
-    x: 74,
-    y: 74,
-  },
-];
+/** The film the hero opens on. Any hero item id works. */
+export const heroOpeningId = "building";
+
+/** Hero centerpiece. `[film]` marks where the shrunken film docks inside the text. */
+export const heroHeadline = ["We don’t just", "make signs.", "We build [film]", "NYC landmarks."];

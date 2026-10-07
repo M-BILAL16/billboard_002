@@ -1,15 +1,14 @@
-import { BillboardNetwork } from "@/components/BillboardNetwork";
-import { CampaignShowcase } from "@/components/CampaignShowcase";
-import { CaseStudies } from "@/components/CaseStudies";
-import { CTASection } from "@/components/CTASection";
+import { AboutSection } from "@/components/AboutSection";
+import { BoroughMap } from "@/components/BoroughMap";
+import { CatalogSection } from "@/components/CatalogSection";
 import { Footer } from "@/components/Footer";
-import { HowItWorks } from "@/components/HowItWorks";
+import { IndustriesSection } from "@/components/IndustriesSection";
 import { InteractiveHero } from "@/components/InteractiveHero";
-import { IntroSection } from "@/components/IntroSection";
 import { Navigation } from "@/components/Navigation";
-import { StatsSection } from "@/components/StatsSection";
-import { WhatWeDo } from "@/components/WhatWeDo";
-import { WhySection } from "@/components/WhySection";
+import { PortfolioSection } from "@/components/PortfolioSection";
+import { ProcessSection } from "@/components/ProcessSection";
+import { QuoteSection } from "@/components/QuoteSection";
+import { ReviewsSection } from "@/components/ReviewsSection";
 
 export default function Home() {
   return (
@@ -17,15 +16,14 @@ export default function Home() {
       <Navigation />
       <main>
         <InteractiveHero />
-        <IntroSection />
-        <WhatWeDo />
-        <StatsSection />
-        <HowItWorks />
-        <BillboardNetwork />
-        <CampaignShowcase />
-        <WhySection />
-        <CaseStudies />
-        <CTASection />
+        <AboutSection />
+        <ProcessSection />
+        <PortfolioSection />
+        <BoroughMap />
+        <CatalogSection />
+        <IndustriesSection />
+        <ReviewsSection />
+        <QuoteSection />
       </main>
       <Footer />
     </>
